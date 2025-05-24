@@ -34,8 +34,7 @@ def parse_arguments():
                         help='Negative sampler')
     parser.add_argument('--n_negative', type=int, default=1, help='Number of negative samples')
     parser.add_argument('--dropout', type=float, default=0.1, help='dropout rate')
-    parser.add_argument('--n_epoch', type=int, default=1000, help='Number of epochs')
-    # 训练总轮次数 一般为800、900或1000
+    parser.add_argument('--n_epoch', type=int, default=800, help='Number of epochs')
     parser.add_argument('--n_layer', type=int, default=2, help='Number of network layers')
     parser.add_argument('--n_head', type=int, default=1, help='Number of GAT heads. Valid only when gcn_module=gat')
     parser.add_argument('--lr', type=float, default=0.00001, help='Learning rate')

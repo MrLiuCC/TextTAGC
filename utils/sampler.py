@@ -6,7 +6,6 @@ def select_negative_sampler(sampler_type, k):
     sampler_type = sampler_type.lower()
     if sampler_type == "uniform":
         return dgl.dataloading.negative_sampler.Uniform(k)
-    # Uniform()此处加上 exclude_positive_edges=True 可以排除正样本，避免采到假负样本
     elif sampler_type == "time":
         return TemporalNegativeSampler(k)
     else:

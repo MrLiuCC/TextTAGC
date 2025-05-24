@@ -96,7 +96,6 @@ def evaluate(model: PrTextTAGC, g, train_eids, test_eids, device, is_undirected)
     :param test_eids:
     :return:
     """
-    # 根据训练边id提取的训练子图，但其中relabel_nodes=False用于保留测试论文节点
     train_graph = dgl.edge_subgraph(g, train_eids, relabel_nodes=False)
     if is_undirected:
         print("----use undirected graph----")
