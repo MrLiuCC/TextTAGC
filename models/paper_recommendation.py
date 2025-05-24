@@ -59,10 +59,9 @@ class PrTextGC(nn.Module):
         self.affinity_score = self._select_predictor()
 
     def _init_module_size(self):
-        # 初始化模型各个神经网络模块的参数规模
         self.in_feats = self.raw_feats
-        self.src_output_feats = self.raw_feats  # src节点输出特征向量(即_get_src_embedding)的维度
-        self.dst_output_feats = self.gcn_output_feats  # dst节点输出特征向量(即_get_dst_embedding)的维度
+        self.src_output_feats = self.raw_feats
+        self.dst_output_feats = self.gcn_output_feats
         if self.gcn_merge_type == "concat":
             self.dst_output_feats += self.raw_feats
 

@@ -24,7 +24,6 @@ class MLPsPredictor(nn.Module):
             subgraph.srcdata.update({'out_src': out_src})
             subgraph.dstdata.update({'out_dst': out_dst})
             subgraph.apply_edges(dgl.function.u_add_v('out_src', 'out_dst', 'score'))
-            # 线性映射为隐藏维度的向量，再相加，聚合特征，后使用激活函数，映射为得分
             score = self.fc_out(self.act(subgraph.edata['score']))
             return score
 
@@ -41,7 +40,7 @@ class AttnPredictor(nn.Module):
         self.Q_proj = nn.Linear(query_dim, hidden_dim * num_heads)
         self.K_proj = nn.Linear(key_dim, hidden_dim * num_heads)
         self.feat_drop = nn.Dropout(dropout)
-        self.scale = np.sqrt(hidden_dim) * num_heads  # 左侧为固定缩放因子，右侧则用于对多头注意力求平均
+        self.scale = np.sqrt(hidden_dim) * num_heads
 
     def forward(self, subgraph, feat_src, feat_dst):
         with subgraph.local_scope():
@@ -51,7 +50,7 @@ class AttnPredictor(nn.Module):
             dst_proj = self.K_proj(feat_dst)
             subgraph.srcdata.update({'src_proj': src_proj})
             subgraph.dstdata.update({'dst_proj': dst_proj})
-            subgraph.apply_edges(dgl.function.u_dot_v('src_proj', 'dst_proj', 'score'))  # 相当于求出每个头的注意力并求和
+            subgraph.apply_edges(dgl.function.u_dot_v('src_proj', 'dst_proj', 'score'))
             score = subgraph.edata['score'] / self.scale
             return score
 
@@ -69,7 +68,6 @@ class MergeLayer(torch.nn.Module):
         self.fc1 = torch.nn.Linear(dim1 + dim2, dim3)
         self.fc2 = torch.nn.Linear(dim3, dim4)
         self.act = torch.nn.ReLU()
-
         torch.nn.init.xavier_normal_(self.fc1.weight)
         torch.nn.init.xavier_normal_(self.fc2.weight)
 

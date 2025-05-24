@@ -21,7 +21,7 @@ class PrBase(nn.Module):
         self.affinity_score = self._select_predictor()
 
     def _init_module_size(self):
-        # 初始化模型各个神经网络模块的参数规模
+        #
         self.in_feats = self.raw_feats
         self.src_output_feats = self.raw_feats  # src节点输出特征向量(即_get_src_embedding)的维度
         self.dst_output_feats = self.raw_feats  # dst节点输出特征向量(即_get_dst_embedding)的维度
@@ -33,7 +33,6 @@ class PrBase(nn.Module):
             return AttnPredictor(self.src_output_feats, self.dst_output_feats, self.pred_hidden_feats,
                                  self.predictor_heads, self.dropout)
         else:
-            # 不支持的预测器类型
             raise ValueError(f"Invalid merge type: {self.predictor}. "
                              f"Only 'mlp' and 'attn' are supported.")
 
@@ -47,7 +46,6 @@ class PrBase(nn.Module):
         return pos_score, neg_score
 
     def predict_edge_probabilities(self, graph, src_nodes, dst_nodes, device):
-        # 评估时调用，用于预测推荐评分
         graph = graph.to(device)
         src_nodes = src_nodes.to(device)
         dst_nodes = dst_nodes.to(device)
@@ -61,7 +59,6 @@ class PrBase(nn.Module):
         return graph.ndata['feat'][src_nodes]
 
     def _get_dst_embedding(self, graph, dst_nodes):
-        # dst与src节点的嵌入是对称的，因此直接调用_get_src_embedding()
         return self._get_src_embedding(graph, dst_nodes)
 
 

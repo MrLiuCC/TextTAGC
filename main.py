@@ -73,7 +73,6 @@ def parse_arguments():
 def compute_loss(pos_score, neg_score):
     n = pos_score.shape[0]
     return (neg_score.view(n, -1) - pos_score.view(n, -1) + 1).clamp(min=0).mean()
-    # m=1的Margin损失   小于0则认为被区分出来了，随后.clamp 将其置零   未区分出来的.mean  算loss
 
 
 def select_model(args, sampler):
@@ -105,13 +104,10 @@ def select_model(args, sampler):
 
 
 def build_undirected_train_graph(g: dgl.DGLGraph):
-    # description: 构建无向/双向图，并且仅保留原始边作为训练边（即train_mask为true），新增的反向边不作为训练边（即train_mask为false）
-    train_eids = torch.nonzero(g.edata['train_mask']).squeeze()  # 返回的是非零元素位置索引压缩成的一维向量
+    train_eids = torch.nonzero(g.edata['train_mask']).squeeze()
     bidirected_g = dgl.add_reverse_edges(g, copy_ndata=True, copy_edata=False)  # 新增的反向边都位于edges()的末尾
-    # set train_mask
     bidirected_g.edata['train_mask'] = torch.full((bidirected_g.number_of_edges(),), False, dtype=torch.bool)
     bidirected_g.edata['train_mask'][train_eids] = True
-    # 删除重复边(如节点对存在多条边)
     bidirected_g = dgl.to_simple(bidirected_g, return_counts=None, copy_ndata=True, copy_edata=True)
     return bidirected_g
 
@@ -119,7 +115,7 @@ def build_undirected_train_graph(g: dgl.DGLGraph):
 def main():
     args = parse_arguments()
     print(args)
-    NUM_NEGATIVE = args.n_negative  # 负采样数量
+    NUM_NEGATIVE = args.n_negative
 
     # set logger
     logging.basicConfig(level=logging.INFO,
@@ -135,20 +131,18 @@ def main():
     train_nids = torch.nonzero(g.ndata['train_mask']).squeeze()
     test_eids = torch.nonzero(g.edata['test_mask']).squeeze()
 
-    train_graph = dgl.node_subgraph(g, train_nids)  # 将训练论文所组成的子图作为训练图，不包含测试论文的边
+    train_graph = dgl.node_subgraph(g, train_nids)
     if args.undirected:
-        # 构建双向图，即无向图
         train_graph = build_undirected_train_graph(train_graph)
     if args.add_self_loop:
         train_graph = dgl.add_self_loop(train_graph, edge_feat_names=[])
 
     train_graph.to(device)
-    train_seeds = torch.nonzero(train_graph.edata['train_mask']).squeeze()  # 训练边的索引，仅用作DataLoader的参数
+    train_seeds = torch.nonzero(train_graph.edata['train_mask']).squeeze()
     print("total graph: ", g)
     print("train graph:", train_graph)
 
     if args.model == "pr-base" or args.model == "pr-ta-text":
-        # 由于采样无卷积的模型，因此，将邻居采样数设为0，防止做无用操作
         args.n_degree = 0
 
     if args.full_sample:
@@ -173,7 +167,7 @@ def main():
 
     # start train
     for epoch in range(args.n_epoch):
-        epoch_start = time.time()  # epoch开始时间
+        epoch_start = time.time()
 
         model = model.train()
         m_loss = []
@@ -188,9 +182,7 @@ def main():
             pos_score = pos_score.squeeze().repeat_interleave(NUM_NEGATIVE)  # 使得pos_score与neg_score的shape保持一致
             neg_score = neg_score.squeeze()
             ys = torch.ones(len(pos_score), dtype=torch.float, device=device, requires_grad=False)
-            # ys指示pos_score 哪些是正样本 哪些是负样本的标签  此处全是正样本 所以为全1
             loss = criterion(pos_score, neg_score, ys)
-            # 后向传播、梯度下降
             loss.backward()
             optimizer.step()
             m_loss.append(loss.item())

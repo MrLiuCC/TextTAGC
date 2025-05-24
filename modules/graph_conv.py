@@ -48,12 +48,9 @@ class GAT(MultiLayerGraphConv):
         super().__init__(in_feats, hidden_dims, num_layers)
         self.num_heads = num_heads
         self.dropout = dropout
-
-        # 输入层
         self.layers.append(dglnn.GATConv(in_feats, self.hidden_dims[0],
                                          num_heads=num_heads, feat_drop=dropout, allow_zero_in_degree=True))
 
-        # 隐藏层 + 输出层
         for i in range(1, num_layers):
             self.layers.append(dglnn.GATConv(hidden_dims[i - 1], self.hidden_dims[i],
                                              num_heads=num_heads, feat_drop=dropout, allow_zero_in_degree=True))
@@ -62,7 +59,6 @@ class GAT(MultiLayerGraphConv):
         hidden_x = x
         for layer_idx, (layer, block) in enumerate(zip(self.layers, blocks)):
             hidden_x = layer(block, hidden_x).mean(dim=1)
-            # 多头注意力输出的形状为(num_nodes, num_heads, out_feats)，根据维度1 取mean后输出维度为（num_nodes, out_feats)
             is_last_layer = layer_idx == len(self.layers) - 1
             if not is_last_layer:
                 hidden_x = F.leaky_relu(hidden_x)
